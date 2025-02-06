@@ -1,74 +1,59 @@
-// ChatWidget.jsx
-import { useState } from 'react';
-import styled from '@emotion/styled';
-import ChatMessage from './ChatMessage';
-import ChatInput from './ChatInput';
-import { sendMessage } from './api';
-
-const Widget = styled.div`
- position: fixed;
- bottom: 20px;
- right: 20px;
- width: 350px;
- height: 500px;
- border-radius: 10px;
- box-shadow: 0 0 10px rgba(0,0,0,0.1);
- display: flex;
- flex-direction: column;
- overflow: hidden;
- background: white;
-`;
-
-const Header = styled.div`
- background: #007bff;
- color: white;
- padding: 15px;
- font-weight: bold;
-`;
-
-const MessagesContainer = styled.div`
- flex: 1;
- overflow-y: auto;
- padding: 10px;
- display: flex;
- flex-direction: column;
-`;
+import React, { useState } from 'react';
+import '../styles/ChatWidget.css';
 
 const ChatWidget = () => {
+ const [message, setMessage] = useState('');
  const [messages, setMessages] = useState([]);
 
- const handleSendMessage = async (text) => {
-   const userMessage = { text, isUser: true };
-   setMessages(prev => [...prev, userMessage]);
+ const handleSubmit = async (e) => {
+   e.preventDefault();
+   if (!message.trim()) return;
 
+   setMessages([...messages, { text: message, isUser: true }]);
+   
    try {
-     const response = await sendMessage(text);
-     const botMessage = { text: response, isUser: false };
-     setMessages(prev => [...prev, botMessage]);
+     const response = await fetch('http://localhost:8000/api/chat/chat', {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify({ message })
+     });
+     
+     const data = await response.json();
+     setMessages(prev => [...prev, { text: data.response, isUser: false }]);
    } catch (error) {
      console.error('Error:', error);
-     const errorMessage = { 
-       text: 'Mi dispiace, si è verificato un errore. Riprova più tardi.', 
+     setMessages(prev => [...prev, { 
+       text: "Mi dispiace, si è verificato un errore. Riprova più tardi.", 
        isUser: false 
-     };
-     setMessages(prev => [...prev, errorMessage]);
+     }]);
    }
+   
+   setMessage('');
  };
 
  return (
-   <Widget>
-     <Header>Assistente Diabete</Header>
-     <MessagesContainer>
-       {messages.map((message, index) => (
-         <ChatMessage
-           key={index}
-           message={message.text}
-           isUser={message.isUser}
+   <div className="chat-widget-container">
+     <div className="chat-widget">
+       <div className="chat-messages">
+         {messages.map((msg, idx) => (
+           <div key={idx} className={`message ${msg.isUser ? 'user' : 'bot'}`}>
+             {msg.text}
+           </div>
+         ))}
+       </div>
+       <form className="chat-input" onSubmit={handleSubmit}>
+         <input
+           value={message}
+           onChange={(e) => setMessage(e.target.value)}
+           placeholder="Scrivi un messaggio..."
+           autoFocus
          />
-       ))}
-     </MessagesContainer>
-     <ChatInput onSendMessage={handleSendMessage} />
-   </Widget>
+         <button type="submit">Invia</button>
+       </form>
+     </div>
+   </div>
  );
 };
 

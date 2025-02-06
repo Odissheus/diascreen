@@ -12,7 +12,7 @@ const bodyStyle = {
 function App() {
  return (
    <div style={bodyStyle}>
-     <h1>Assistente Diabete - Demo</h1>
+     <h1>Screening Diabete - AI Demo Assistant</h1>
      <ChatWidget />
    </div>
  )
